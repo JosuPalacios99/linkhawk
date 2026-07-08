@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-linkhawk.py - enumeracion nombre/puesto de empleados via LinkedIn + generacion emails.
-Modo browser (navegador real, headed o headless) y modo auth (login, voyager API).
+linkhawk.py - LinkedIn employee name/title enumeration + email generation.
+Browser mode (real browser, headed or headless) and auth mode (login, voyager API).
 
-Uso:
-  # navegador real, resuelve captcha a mano la primera vez
+Usage:
+  # real browser, solve captcha by hand the first time
   python3 linkhawk.py browser -o "Acme Corp" -d acme.com --output out.csv
 
-  # mismo pero sin ventana, reusa cookies de sesion ya resuelta
+  # same but headless, reuses already-solved session cookies
   python3 linkhawk.py browser -o "Acme Corp" -d acme.com --headless --output out.csv
 
-  # con login (mas cobertura, riesgo cuenta)
+  # with login (more coverage, account risk)
   python3 linkhawk.py auth -o "Acme Corp" -d acme.com --li-at <cookie_li_at> --output out.csv
 """
 import argparse
@@ -48,7 +48,7 @@ def write_csv(path, people, domain, email_format, all_formats):
 
 
 def write_plain(path, people, domain, email_format, part):
-    """part='email' -> linea completa nombre@dominio. part='user' -> solo local-part (antes de @)."""
+    """part='email' -> full line name@domain. part='user' -> local-part only (before @)."""
     fmt = email_format or "first.last"
     seen = set()
     with open(path, "w", encoding="utf-8") as f:
@@ -76,45 +76,45 @@ def dedup(people):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="LinkHawk: LinkedIn recon, nombres/puestos + email permutations")
+    parser = argparse.ArgumentParser(description="LinkHawk: LinkedIn recon, names/titles + email permutations")
     sub = parser.add_subparsers(dest="mode", required=True)
 
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("-o", "--org", required=True, help="Nombre de la organizacion (ej. 'Acme Corp')")
-    common.add_argument("-d", "--domain", help="Dominio para generar emails (ej. acme.com)")
+    common.add_argument("-o", "--org", required=True, help="Organization name (e.g. 'Acme Corp')")
+    common.add_argument("-d", "--domain", help="Domain to generate emails from (e.g. acme.com)")
     common.add_argument("--email-format", default=None, choices=list(FORMATS.keys()),
-                         help="Formato de email a generar (sin esto y sin --all-formats, no se genera email)")
-    common.add_argument("--all-formats", action="store_true", help="Genera todas las permutaciones de email por fila")
-    common.add_argument("--output", default="linkhawk.csv", help="Fichero CSV de salida")
-    common.add_argument("--emails-out", default=None, help="Fichero txt solo emails (uno por linea), requiere --domain")
+                         help="Email format to generate (without this or --all-formats, no email is generated)")
+    common.add_argument("--all-formats", action="store_true", help="Generate all email permutations per row")
+    common.add_argument("--output", default="linkhawk.csv", help="Output CSV file")
+    common.add_argument("--emails-out", default=None, help="Plain txt file, emails only (one per line), requires --domain")
     common.add_argument("--usernames-out", default=None,
-                         help="Fichero txt solo local-part del email (usuario sin dominio), requiere --domain")
-    common.add_argument("--delay", type=float, default=2.0, help="Delay base entre requests (seg)")
+                         help="Plain txt file, email local-part only (no domain), requires --domain")
+    common.add_argument("--delay", type=float, default=2.0, help="Base delay between requests (sec)")
 
-    p_auth = sub.add_parser("auth", parents=[common], help="Modo con login LinkedIn (voyager API interna)")
-    p_auth.add_argument("--username", help="Email cuenta LinkedIn (si no usas --li-at)")
-    p_auth.add_argument("--password", help="Password cuenta LinkedIn (si no usas --li-at)")
-    p_auth.add_argument("--li-at", help="Cookie de sesion li_at (recomendado sobre user/pass)")
-    p_auth.add_argument("--max-results", type=int, default=200, help="Maximo de perfiles a recuperar")
+    p_auth = sub.add_parser("auth", parents=[common], help="Mode with LinkedIn login (internal voyager API)")
+    p_auth.add_argument("--username", help="LinkedIn account email (if not using --li-at)")
+    p_auth.add_argument("--password", help="LinkedIn account password (if not using --li-at)")
+    p_auth.add_argument("--li-at", help="li_at session cookie (preferred over user/pass)")
+    p_auth.add_argument("--max-results", type=int, default=200, help="Max profiles to retrieve")
     p_auth.add_argument("--resolve-urls", action="store_true",
-                         help="Saca la URL de perfil (1 request extra por persona, mas lento y mas riesgo de rate-limit)")
+                         help="Fetch the profile URL (1 extra request per person, slower and more rate-limit risk)")
 
     p_browser = sub.add_parser(
         "browser", parents=[common],
-        help="Modo navegador real (undetected-chromedriver), salta captcha a mano",
+        help="Real browser mode (undetected-chromedriver), solve captcha by hand",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
-            "Ejemplo:\n"
+            "Example:\n"
             '  python3 linkhawk.py browser -o "ECORP" -d ecorp.com -e bing --pages 5 --headless --output out.csv\n'
         ),
     )
     p_browser.add_argument("-e", "--engine", default="all", choices=["bing", "duckduckgo", "google", "all"],
-                            help="Motor de busqueda, 'all' corre los 3 (default: all)")
-    p_browser.add_argument("--pages", type=int, default=10, help="Paginas de resultados a recorrer (default: 10)")
-    p_browser.add_argument("--extra", default="", help="Termino extra para acotar busqueda (ej. ciudad)")
-    p_browser.add_argument("--proxy", default="", help="Proxy host:port para el navegador (opcional)")
+                            help="Search engine, 'all' runs all 3 (default: all)")
+    p_browser.add_argument("--pages", type=int, default=10, help="Result pages to walk (default: 10)")
+    p_browser.add_argument("--extra", default="", help="Extra term to narrow the search (e.g. city)")
+    p_browser.add_argument("--proxy", default="", help="Proxy host:port for the browser (optional)")
     p_browser.add_argument("--headless", action="store_true",
-                            help="Sin ventana visible (no puedes resolver captcha si sale uno)")
+                            help="No visible window (can't solve a captcha if one shows up)")
 
     args = parser.parse_args()
 
@@ -132,8 +132,8 @@ def main():
         people = browser_mode.run(args.org, args.engine, args.pages, args.delay, args.extra, args.headless, args.proxy)
     else:
         if not args.li_at and not (args.username and args.password):
-            parser.error("auth mode necesita --li-at o --username/--password")
-        print("[!] auth mode: todavia en desarrollo, puede fallar o dar resultados incompletos", file=sys.stderr)
+            parser.error("auth mode needs --li-at or --username/--password")
+        print("[!] auth mode: still under development, may fail or give incomplete results", file=sys.stderr)
         print(f"[*] auth mode | org='{args.org}'", file=sys.stderr)
         people = auth_mode.run(
             args.org,
@@ -146,20 +146,20 @@ def main():
         )
 
     people = dedup(people)
-    print(f"[*] {len(people)} perfiles unicos encontrados", file=sys.stderr)
+    print(f"[*] {len(people)} unique profiles found", file=sys.stderr)
 
     write_csv(args.output, people, args.domain, args.email_format, args.all_formats)
-    print(f"[+] guardado en {args.output}", file=sys.stderr)
+    print(f"[+] saved to {args.output}", file=sys.stderr)
 
     if args.emails_out or args.usernames_out:
         if not args.domain:
-            parser.error("--emails-out/--usernames-out necesitan --domain")
+            parser.error("--emails-out/--usernames-out require --domain")
     if args.emails_out:
         write_plain(args.emails_out, people, args.domain, args.email_format, "email")
-        print(f"[+] guardado en {args.emails_out}", file=sys.stderr)
+        print(f"[+] saved to {args.emails_out}", file=sys.stderr)
     if args.usernames_out:
         write_plain(args.usernames_out, people, args.domain, args.email_format, "user")
-        print(f"[+] guardado en {args.usernames_out}", file=sys.stderr)
+        print(f"[+] saved to {args.usernames_out}", file=sys.stderr)
 
 
 if __name__ == "__main__":
