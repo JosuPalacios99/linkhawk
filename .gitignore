@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+
+# venv (si se crea dentro del propio directorio del tool)
+bin/
+include/
+lib/
+lib64/
+pyvenv.cfg
+share/
+
+# resultados por organizacion (datos de clientes/objetivos, no van a git)
+output/
+*.csv
+
+# perfil chrome persistente si alguien lo crea local al repo
+.linkedin_recon_chrome_profile/
