@@ -10,13 +10,30 @@ linkhawk.py       # entrypoint, unico script suelto
 linkhawk/         # paquete: auth_mode.py, browser_mode.py, emails.py
 ```
 
+## Requisitos
+
+- Python 3.8+
+- Chrome/Chromium instalado (lo usa el modo browser)
+
 ## Instalar
 
 ```bash
-pip install -r requirements.txt --break-system-packages
+# clonar / entrar al repo
+cd linkhawk
+
+# crear venv (en la raiz del repo, ver .gitignore: bin/ lib/ pyvenv.cfg)
+python3 -m venv .
+
+# activar venv
+source bin/activate       # Linux/macOS
+Scripts\activate           # Windows (cmd/PowerShell)
+
+# instalar dependencias dentro del venv
+pip install -r requirements.txt
 ```
 
-Necesita Chrome/Chromium instalado (lo usa el modo browser).
+Para salir del venv: `deactivate`. En corridas siguientes, solo hace falta
+repetir el `source bin/activate` antes de correr `linkhawk.py`.
 
 ---
 
