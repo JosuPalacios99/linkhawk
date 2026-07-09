@@ -15,6 +15,7 @@ Usage:
 """
 import argparse
 import csv
+import json
 import os
 import re
 import sys
@@ -45,6 +46,21 @@ def write_csv(path, people, domain, email_format, all_formats):
                 else:
                     row["email"] = generate_all(p["name"], domain).get(email_format, "")
             writer.writerow(row)
+
+
+def write_json(path, people, domain, email_format):
+    """Each entry: name, title, and email only if email_format+domain resolve one."""
+    out = []
+    for p in people:
+        entry = {"name": p["name"], "title": p.get("title", "")}
+        if domain and email_format:
+            email = generate_all(p["name"], domain).get(email_format, "")
+            if email:
+                entry["email"] = email
+        out.append(entry)
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
 
 
 def write_plain(path, people, domain, email_format, part):
@@ -86,6 +102,8 @@ def main():
                          help="Email format to generate (without this or --all-formats, no email is generated)")
     common.add_argument("--all-formats", action="store_true", help="Generate all email permutations per row")
     common.add_argument("--output", default="linkhawk.csv", help="Output CSV file")
+    common.add_argument("--json-out", default=None,
+                         help="Output JSON file: name, title, and email if --email-format+--domain resolve one")
     common.add_argument("--emails-out", default=None, help="Plain txt file, emails only (one per line), requires --domain")
     common.add_argument("--usernames-out", default=None,
                          help="Plain txt file, email local-part only (no domain), requires --domain")
@@ -121,6 +139,8 @@ def main():
     org_dir = os.path.join("output", slugify(args.org))
     os.makedirs(org_dir, exist_ok=True)
     args.output = os.path.join(org_dir, os.path.basename(args.output))
+    if args.json_out:
+        args.json_out = os.path.join(org_dir, os.path.basename(args.json_out))
     if args.emails_out:
         args.emails_out = os.path.join(org_dir, os.path.basename(args.emails_out))
     if args.usernames_out:
@@ -150,6 +170,10 @@ def main():
 
     write_csv(args.output, people, args.domain, args.email_format, args.all_formats)
     print(f"[+] saved to {args.output}", file=sys.stderr)
+
+    if args.json_out:
+        write_json(args.json_out, people, args.domain, args.email_format)
+        print(f"[+] saved to {args.json_out}", file=sys.stderr)
 
     if args.emails_out or args.usernames_out:
         if not args.domain:

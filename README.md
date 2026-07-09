@@ -185,9 +185,12 @@ a plaintext username/password, which triggers 2FA/checkpoint more easily.
 ## Output
 
 Each run auto-creates `output/<org_slug>/` and saves the CSV there
-(`--output`), plus, if requested, the plain `--emails-out` / `--usernames-out`
-files (one per line, require `--domain`; `--usernames-out` is just the
-local-part before the `@`).
+(`--output`), plus, if requested:
+
+- `--json-out FILE` — JSON array, one object per profile: `name`, `title`,
+  and `email` (only added if `--email-format` + `--domain` resolve one).
+- `--emails-out` / `--usernames-out` — plain txt files (one per line),
+  require `--domain`; `--usernames-out` is just the local-part before the `@`.
 
 ## Supported email formats
 
