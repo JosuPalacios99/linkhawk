@@ -13,13 +13,14 @@ def clean_token(s: str) -> str:
 
 
 def split_name(full_name: str):
-    """Devuelve (first, last) best-effort. Nombres compuestos: primer token = first, resto = last."""
+    """Devuelve (first, last) best-effort. Convencion es. (nombre + apellido1 + apellido2):
+    primer token = first, segundo token = last (primer apellido, no el segundo)."""
     parts = [p for p in re.split(r"\s+", full_name.strip()) if p]
     if not parts:
         return "", ""
     if len(parts) == 1:
         return parts[0], ""
-    return parts[0], parts[-1]
+    return parts[0], parts[1]
 
 
 FORMATS = {
